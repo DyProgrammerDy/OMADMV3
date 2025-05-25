@@ -1,0 +1,7 @@
+{
+  "module_key": "budgetModule",
+  "name": "Orçamentos",
+  "description": "Criação e acompanhamento de propostas e orçamentos.",
+  "icon": "RequestQuote",
+  "version": "1.0.0"
+}

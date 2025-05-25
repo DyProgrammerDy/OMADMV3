@@ -1,0 +1,7 @@
+{
+  "module_key": "packagesModule",
+  "name": "Pacotes",
+  "description": "Criação e gerenciamento de pacotes de viagem.",
+  "icon": "Package",
+  "version": "1.0.0"
+}

@@ -1,0 +1,7 @@
+{
+  "module_key": "suppliersModule",
+  "name": "Fornecedores",
+  "description": "Gestão de fornecedores e seus serviços.",
+  "icon": "LocalShipping",
+  "version": "1.0.0"
+}

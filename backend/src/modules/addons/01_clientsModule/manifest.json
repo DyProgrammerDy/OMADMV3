@@ -1,0 +1,7 @@
+{
+  "module_key": "clientsModule",
+  "name": "Clientes",
+  "description": "Gestão completa de clientes e seus históricos.",
+  "icon": "People",
+  "version": "1.0.0"
+}

@@ -1,0 +1,7 @@
+{
+  "module_key": "marketingModule",
+  "name": "Marketing",
+  "description": "Ferramentas para campanhas de marketing e comunicação.",
+  "icon": "Campaign",
+  "version": "1.0.0"
+}

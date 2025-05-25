@@ -1,0 +1,7 @@
+{
+  "module_key": "financialModule",
+  "name": "Financeiro",
+  "description": "Gestão financeira, contas a pagar e receber.",
+  "icon": "MonetizationOn",
+  "version": "1.0.0"
+}

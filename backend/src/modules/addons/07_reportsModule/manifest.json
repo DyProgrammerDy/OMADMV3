@@ -1,0 +1,7 @@
+{
+  "module_key": "reportsModule",
+  "name": "Relatórios",
+  "description": "Geração de relatórios personalizados e dashboards.",
+  "icon": "Assessment",
+  "version": "1.0.0"
+}

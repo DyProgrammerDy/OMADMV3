@@ -1,0 +1,7 @@
+{
+  "module_key": "documentsModule",
+  "name": "Documentos",
+  "description": "Gestão de documentos e arquivos importantes.",
+  "icon": "Folder",
+  "version": "1.0.0"
+}

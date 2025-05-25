@@ -1,0 +1,7 @@
+{
+  "module_key": "settingsModule",
+  "name": "Configurações",
+  "description": "Configurações gerais do sistema e módulos.",
+  "icon": "Settings",
+  "version": "1.0.0"
+}

@@ -1,0 +1,7 @@
+{
+  "module_key": "reservationsModule",
+  "name": "Reservas",
+  "description": "Controle e gerenciamento de reservas de serviços.",
+  "icon": "EventAvailable",
+  "version": "1.0.0"
+}
