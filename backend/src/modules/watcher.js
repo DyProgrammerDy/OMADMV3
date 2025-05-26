@@ -3,6 +3,9 @@ const path = require('path');
 const fs = require('fs').promises;
 const db = require('../db');
 
+// Update paths to use project root
+const PROJECT_ROOT = path.join(__dirname, '..', '..', '..');
+const FRONTEND_PATH = path.join(PROJECT_ROOT, 'o-mundo-a-sua-porta-frontend');
 const ADDONS_PATH = path.join(__dirname, 'addons');
 
 async function loadModule(filePath) {
