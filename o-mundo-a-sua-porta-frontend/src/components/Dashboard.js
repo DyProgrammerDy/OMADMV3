@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Grid, Card, CardContent, Typography, CardActions, Button, CircularProgress, Alert, Box, Fab } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import * as MuiIcons from '@mui/icons-material'; // Importar todos os ícones para uso dinâmico
 import AddModuleModal from './AddModuleModal';
 import apiClient from '../services/apiClient'; // Criaremos este
@@ -121,6 +122,19 @@ function Dashboard() {
         }}
       >
         <AddIcon />
+      </Fab>
+
+      <Fab
+        color="secondary"
+        aria-label="open folder"
+        onClick={() => window.open('file:///E:/001SistemaADM/Mod1/ModularOMundoADM2025/backend/src/modules/addons')}
+        sx={{
+          position: 'fixed',
+          top: (theme) => theme.spacing(20), // Position below the first FAB
+          right: (theme) => theme.spacing(4),
+        }}
+      >
+        <FolderOpenIcon />
       </Fab>
     </>
   );

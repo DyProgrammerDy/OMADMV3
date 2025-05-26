@@ -1,0 +1,9 @@
+{
+    "name": "New Module",
+    "title": "New Module Title",
+    "description": "Description of the new module functionality",
+    "icon_name": "Extension",
+    "module_key": "new_module",
+    "is_active": false,
+    "order_index": 10
+}

@@ -1,0 +1,9 @@
+{
+    "name": "Example Module",
+    "title": "Example Module",
+    "description": "This is an example module",
+    "icon_name": "Extension",
+    "module_key": "example_module",
+    "is_active": false,
+    "order_index": 10
+}
