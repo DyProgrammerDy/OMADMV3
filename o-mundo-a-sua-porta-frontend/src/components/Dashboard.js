@@ -88,7 +88,7 @@ function Dashboard() {
                   Desativar
                 </Button>
                 {/* No futuro, um botão "Abrir" levaria à funcionalidade do módulo */}
-                <Button size="small" variant="contained" disabled>Abrir</Button>
+                <Button size="small" variant="contained" disabled>Adicionar Função</Button>
               </CardActions>
             </Card>
           </Grid>
@@ -116,7 +116,7 @@ function Dashboard() {
         onClick={handleOpenModal}
         sx={{
           position: 'fixed',
-          bottom: (theme) => theme.spacing(4),
+          top: (theme) => theme.spacing(10),
           right: (theme) => theme.spacing(4),
         }}
       >
