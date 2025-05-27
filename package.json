@@ -14,7 +14,7 @@
     "setup": "npm run clean && npm run install-all"
   },
   "devDependencies": {
-    "concurrently": "^8.2.0",
+    "concurrently": "^8.2.2",
     "rimraf": "^5.0.1"
   },
   "dependencies": {
