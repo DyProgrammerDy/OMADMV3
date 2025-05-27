@@ -2,9 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Grid, Card, CardContent, Typography, CardActions, Button, CircularProgress, Alert, Box, Fab } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import LaunchIcon from '@mui/icons-material/Launch'; // For the "Open" button
 import * as MuiIcons from '@mui/icons-material'; // Importar todos os ícones para uso dinâmico
 import AddModuleModal from './AddModuleModal';
 import apiClient from '../services/apiClient'; // Criaremos este
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const DynamicIcon = ({ name }) => {
   const IconComponent = MuiIcons[name];
@@ -17,6 +19,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -53,6 +56,18 @@ function Dashboard() {
       setError(`Erro ao atualizar o módulo ${moduleKey}.`);
     }
   };
+
+  const handleOpenModule = (moduleKey) => {
+    // This is where you'll define navigation for each module
+    // For now, we only have 'budgetModule'
+    if (moduleKey === 'budgetModule') {
+      navigate('/dashboard/budgets');
+    } else {
+      // You can add a default behavior or navigation for other modules here
+      console.warn(`Navigation not yet implemented for module: ${moduleKey}`);
+      // Example: navigate(`/dashboard/${moduleKey.toLowerCase().replace('module', '')}`);
+    }
+  };
   
   if (loading) {
     return (
@@ -84,12 +99,26 @@ function Dashboard() {
                   {module.description}
                 </Typography>
               </CardContent>
-              <CardActions sx={{ justifyContent: 'center', p: 2 }}>
-                <Button size="small" variant="outlined" color="secondary" onClick={() => handleToggleModule(module.module_key)}>
+              <CardActions sx={{ justifyContent: 'center', p: 2, columnGap: 1 /* Added gap */ }}>
+                <Button 
+                    size="small" 
+                    variant="contained" 
+                    color="primary" // Changed to primary for "Open"
+                    startIcon={<LaunchIcon />}
+                    onClick={() => handleOpenModule(module.module_key)}
+                    // Disable if module_key is not recognized or no path exists
+                    // disabled={module.module_key !== 'budgetModule'} // Example: only enable for budgetModule for now
+                >
+                  Abrir
+                </Button>
+                <Button 
+                    size="small" 
+                    variant="outlined" 
+                    color="secondary" 
+                    onClick={() => handleToggleModule(module.module_key)}
+                >
                   Desativar
                 </Button>
-                {/* No futuro, um botão "Abrir" levaria à funcionalidade do módulo */}
-                <Button size="small" variant="contained" disabled>Adicionar Função</Button>
               </CardActions>
             </Card>
           </Grid>

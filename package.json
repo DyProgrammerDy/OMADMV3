@@ -4,11 +4,20 @@
   "description": "Sistema modular de administração",
   "scripts": {
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "start:backend": "cd backend && npm start",
     "start:frontend": "cd o-mundo-a-sua-porta-frontend && npm start",
-    "install:all": "npm install && cd backend && npm install && cd ../o-mundo-a-sua-porta-frontend && npm install"
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd o-mundo-a-sua-porta-frontend && npm start",
+    "install-all": "npm install && cd backend && npm ci && cd ../o-mundo-a-sua-porta-frontend && npm ci",
+    "clean": "rimraf ./**/node_modules ./**/package-lock.json",
+    "setup": "npm run clean && npm run install-all"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.0",
+    "rimraf": "^5.0.1"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0"
   }
 }

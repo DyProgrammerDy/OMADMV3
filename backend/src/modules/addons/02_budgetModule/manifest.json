@@ -1,7 +1,11 @@
 {
   "module_key": "budgetModule",
   "name": "Orçamentos",
-  "description": "Criação e acompanhamento de propostas e orçamentos.",
-  "icon": "RequestQuote",
-  "version": "1.0.0"
+  "title": "Gestão de Orçamentos",
+  "description": "Criação, envio e acompanhamento de propostas e orçamentos para clientes.",
+  "icon_name": "RequestQuote",
+  "version": "1.0.0",
+  "is_active": true,
+  "order_index": 2
 }
+

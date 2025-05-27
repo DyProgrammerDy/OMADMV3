@@ -1,16 +1,100 @@
 const express = require('express');
 const cors = require('cors');
+const { pool, testConnection } = require('./db');
+const budgetRoutes = require('./routes/budgetRoutes');
+const { loadExistingModules } = require('./modules/watcher');
 const fs = require('fs').promises;
 const path = require('path');
-const db = require('./db');
-const { loadExistingModules } = require('./modules/watcher');
 
 const app = express();
+const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  const dbConnected = await testConnection();
+  res.json({
+    status: dbConnected ? 'healthy' : 'database_error',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Mount budget routes under /api/budgets
+app.use('/api/budgets', budgetRoutes);
+
 const modulesDir = path.join(__dirname, 'modules', 'addons');
+
+// Function to load and register routes from active modules
+async function loadAndRegisterModuleRoutes(expressApp) {
+  console.log('Attempting to load and register module routes...');
+  try {
+    const { rows: activeModules } = await pool.query(
+      'SELECT module_key, name FROM dashboard_modules WHERE is_active = TRUE ORDER BY order_index ASC'
+    );
+
+    if (activeModules.length === 0) {
+      console.log('No active modules found to load routes from.');
+      return;
+    }
+
+    console.log(`Found ${activeModules.length} active module(s).`);
+
+    const addonFolders = await fs.readdir(modulesDir);
+
+    for (const moduleRecord of activeModules) {
+      const moduleKey = moduleRecord.module_key;
+      let modulePathFound = null;
+
+      // Find the corresponding folder in addons. This assumes manifest.json module_key matches db module_key.
+      for (const folder of addonFolders) {
+        const manifestPath = path.join(modulesDir, folder, 'manifest.json');
+        try {
+          await fs.access(manifestPath); // Check if manifest.json exists
+          const manifestContent = await fs.readFile(manifestPath, 'utf-8');
+          const manifestData = JSON.parse(manifestContent);
+          if (manifestData.module_key === moduleKey) {
+            modulePathFound = path.join(modulesDir, folder);
+            break;
+          }
+        } catch (err) {
+          // ENOENT is fine (no manifest), SyntaxError for bad JSON
+          if (err.code !== 'ENOENT' && !(err instanceof SyntaxError)) {
+            console.error(`Error reading manifest in ${folder} while trying to load routes for ${moduleKey}:`, err);
+          } else if (err instanceof SyntaxError) {
+             console.error(`Syntax error in manifest file ${manifestPath} for module ${moduleKey}`);
+          }
+        }
+      }
+
+      if (modulePathFound) {
+        const moduleIndexPath = path.join(modulePathFound, 'index.js');
+        try {
+          await fs.access(moduleIndexPath); // Check if module's index.js exists
+          const moduleExports = require(moduleIndexPath); // Dynamically require the module's index.js
+
+          if (moduleExports && moduleExports.routes) {
+            expressApp.use(`/api/${moduleKey}`, moduleExports.routes);
+            console.log(`Successfully registered routes for module: ${moduleKey} under /api/${moduleKey}`);
+          } else {
+            console.warn(`Module ${moduleKey} (in ${modulePathFound}) does not export 'routes' or is improperly structured.`);
+          }
+        } catch (err) {
+          if (err.code === 'ENOENT') {
+            console.warn(`Module ${moduleKey} is active but its index.js was not found at ${moduleIndexPath}`);
+          } else {
+            console.error(`Error loading routes for module ${moduleKey} from ${moduleIndexPath}:`, err);
+          }
+        }
+      } else {
+        console.warn(`Module ${moduleKey} is active in DB, but no corresponding directory/manifest found in addons.`);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load or register module routes:', error);
+  }
+}
 
 // GET /api/modules/available
 app.get('/api/modules/available', async (req, res) => {
@@ -140,12 +224,41 @@ app.get('/', (req, res) => {
   res.send('Server is running');
 });
 
-const PORT = 3001;
-app.listen(PORT, async () => {
-    console.log(`Server is running on port ${PORT}`);
-    try {
-        await loadExistingModules();
-    } catch (error) {
-        console.error('Error loading modules:', error);
+// Start server only if database connects
+const startServer = async () => {
+  try {
+    console.log('Starting server initialization...');
+    
+    // Test database connection first
+    const dbConnected = await testConnection();
+    if (!dbConnected) {
+      throw new Error('Database connection failed');
     }
-});
+
+    // Start express server
+    app.listen(port, async () => {
+      console.log(`✓ Server running at http://localhost:${port}`);
+      
+      try {
+        console.log('Loading modules...');
+        await loadExistingModules();
+        console.log('✓ Modules loaded into database');
+        
+        await loadAndRegisterModuleRoutes(app);
+        console.log('✓ Module routes registered');
+        
+        console.log('Application startup complete!');
+      } catch (error) {
+        console.error('Module initialization error:', error);
+        // Don't exit - let the server continue running even if modules fail
+      }
+    });
+  } catch (error) {
+    console.error('Server startup failed:', error);
+    process.exit(1);
+  }
+};
+
+// Start the server
+console.log('Initializing application...');
+startServer();
