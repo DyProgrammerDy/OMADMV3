@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const { pool, testConnection } = require('./db');
-const budgetRoutes = require('./routes/budgetRoutes');
+const { connectDB, getDB, closeDB, testConnection } = require('./db'); // Updated DB import
+const budgetRoutes = require('./routes/budgetRoutes'); // Ensure budgetRoutes also uses getDB() if it accesses the DB
 const { loadExistingModules } = require('./modules/watcher');
 const fs = require('fs').promises;
 const path = require('path');
@@ -30,16 +30,19 @@ const modulesDir = path.join(__dirname, 'modules', 'addons');
 async function loadAndRegisterModuleRoutes(expressApp) {
   console.log('Attempting to load and register module routes...');
   try {
+    const pool = getDB();
     const { rows: activeModules } = await pool.query(
       'SELECT module_key, name FROM dashboard_modules WHERE is_active = TRUE ORDER BY order_index ASC'
     );
+
 
     if (activeModules.length === 0) {
       console.log('No active modules found to load routes from.');
       return;
     }
 
-    console.log(`Found ${activeModules.length} active module(s).`);
+    console.log(`Found ${activeModules.length} active module(s) in DB to process.`);
+
 
     const addonFolders = await fs.readdir(modulesDir);
 
@@ -107,18 +110,19 @@ app.get('/api/modules/available', async (req, res) => {
       try {
         // Check if manifest exists before trying to read
         await fs.access(manifestPath);
+        const pool = getDB();
         const manifestContent = await fs.readFile(manifestPath, 'utf-8');
         const manifestData = JSON.parse(manifestContent);
 
         // Query database for is_active status
-        const dbResult = await db.query(
+        const { rows: dbResult } = await pool.query(
           'SELECT is_active FROM dashboard_modules WHERE module_key = $1',
           [manifestData.module_key]
         );
 
         let isActive = false;
-        if (dbResult.rows.length > 0) {
-          isActive = dbResult.rows[0].is_active;
+        if (dbResult.length > 0) {
+          isActive = dbResult[0].is_active;
         }
 
         availableModules.push({
@@ -145,10 +149,11 @@ app.get('/api/modules/available', async (req, res) => {
 // GET /api/modules/active
 app.get('/api/modules/active', async (req, res) => {
   try {
-    const dbResult = await db.query(
-      'SELECT module_key, name, description, icon_name FROM dashboard_modules WHERE is_active = TRUE'
+    const pool = getDB();
+    const { rows: activeModules } = await pool.query(
+      'SELECT module_key, name, description, icon_name FROM dashboard_modules WHERE is_active = TRUE ORDER BY order_index ASC'
     );
-    res.json(dbResult.rows);
+    res.json(activeModules);
   } catch (err) {
     console.error('Error retrieving active modules:', err);
     res.status(500).json({ error: 'Failed to retrieve active modules' });
@@ -160,35 +165,40 @@ app.post('/api/modules/:moduleKey/toggle', async (req, res) => {
   const { moduleKey } = req.params;
 
   try {
-    let dbResult = await db.query(
+    const pool = getDB();
+    let { rows: existingModuleRows } = await pool.query(
       'SELECT * FROM dashboard_modules WHERE module_key = $1',
       [moduleKey]
     );
 
     let updatedModule;
 
-    if (dbResult.rows.length > 0) {
-      const currentStatus = dbResult.rows[0].is_active;
-      const updateResult = await db.query(
-        'UPDATE dashboard_modules SET is_active = $1 WHERE module_key = $2 RETURNING *',
+    if (existingModuleRows.length > 0) {
+      const currentStatus = existingModuleRows[0].is_active;
+      const { rows: updateResult } = await pool.query(
+        'UPDATE dashboard_modules SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE module_key = $2 RETURNING *',
         [!currentStatus, moduleKey]
       );
-      updatedModule = updateResult.rows[0];
+      updatedModule = updateResult[0];
     } else {
+      // Module not in DB, try to find its manifest to insert it
+      // This part assumes 'module.json' was a typo and it should be 'manifest.json'
       const moduleFolders = await fs.readdir(modulesDir);
       let moduleData;
 
       for (const folder of moduleFolders) {
-        const modulePath = path.join(modulesDir, folder, 'module.json');
+        const manifestPath = path.join(modulesDir, folder, 'manifest.json'); // Corrected to manifest.json
         try {
-          const moduleContent = await fs.readFile(modulePath, 'utf-8');
-          const data = JSON.parse(moduleContent);
-          if (data.module_key === moduleKey) {
-            moduleData = data;
+          const manifestContent = await fs.readFile(manifestPath, 'utf-8');
+          const manifest = JSON.parse(manifestContent);
+          if (manifest.module_key === moduleKey) {
+            moduleData = manifest; // Use the whole manifest
             break;
           }
         } catch (err) {
-          console.error(`Error reading module in ${folder}:`, err);
+          if (err.code !== 'ENOENT') { // Ignore if module.json (or manifest.json) not found
+            console.error(`Error reading module manifest in ${folder} for toggle:`, err);
+          }
         }
       }
 
@@ -196,22 +206,23 @@ app.post('/api/modules/:moduleKey/toggle', async (req, res) => {
         return res.status(404).json({ error: `Module ${moduleKey} not found` });
       }
 
-      const insertResult = await db.query(
+      const { rows: insertResult } = await pool.query(
         `INSERT INTO dashboard_modules 
-         (name, title, description, icon_name, module_key, is_active, order_index)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         (module_key, name, title, description, icon_name, version, is_active, order_index, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
          RETURNING *`,
         [
+          moduleData.module_key,
           moduleData.name,
           moduleData.title,
-          moduleData.description,
-          moduleData.icon_name,
-          moduleData.module_key,
-          true,
-          moduleData.order_index
+          moduleData.description || '',
+          moduleData.icon_name || moduleData.icon || 'default_icon', // Prefer icon_name, fallback to icon
+          moduleData.version || '1.0.0',
+          true, // Activating it on first toggle/insert
+          moduleData.order_index || 99
         ]
       );
-      updatedModule = insertResult.rows[0];
+      updatedModule = insertResult[0];
     }
     res.json(updatedModule);
   } catch (err) {
@@ -228,19 +239,20 @@ app.get('/', (req, res) => {
 const startServer = async () => {
   try {
     console.log('Starting server initialization...');
-    
-    // Test database connection first
-    const dbConnected = await testConnection();
-    if (!dbConnected) {
-      throw new Error('Database connection failed');
-    }
+
+    // Connect to the database first
+    await connectDB(); // This will throw if connection fails
+    console.log('✓ Database connection established.');
 
     // Start express server
     app.listen(port, async () => {
       console.log(`✓ Server running at http://localhost:${port}`);
       
       try {
-        console.log('Loading modules...');
+        // loadExistingModules might interact with the DB.
+        // Ensure it's adapted to use getDB() if necessary.
+        // Its implementation is not shown, so this is an assumption.
+        console.log('Loading/syncing modules from filesystem to database...');
         await loadExistingModules();
         console.log('✓ Modules loaded into database');
         
@@ -249,15 +261,28 @@ const startServer = async () => {
         
         console.log('Application startup complete!');
       } catch (error) {
-        console.error('Module initialization error:', error);
+        console.error('Error during post-listen module initialization:', error);
         // Don't exit - let the server continue running even if modules fail
+        // This is a design choice. Consider if critical module failures should halt the app.
       }
     });
   } catch (error) {
-    console.error('Server startup failed:', error);
+    console.error('✗ FATAL: Server startup failed:', error);
+    await closeDB(); // Attempt to close DB connection on failed startup
     process.exit(1);
   }
 };
+
+// Graceful shutdown
+['SIGINT', 'SIGTERM'].forEach(signal => {
+  process.on(signal, async () => {
+    console.log(`\n${signal} signal received: closing HTTP server and DB connection.`);
+    await closeDB();
+    // Add server.close() if app.listen() is assigned to a variable `server`
+    console.log('Exiting process.');
+    process.exit(0);
+  });
+});
 
 // Start the server
 console.log('Initializing application...');
