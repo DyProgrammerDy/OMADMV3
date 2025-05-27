@@ -3,10 +3,11 @@ import { Grid, Card, CardContent, Typography, CardActions, Button, CircularProgr
 import AddIcon from '@mui/icons-material/Add';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import LaunchIcon from '@mui/icons-material/Launch'; // For the "Open" button
+import LinkIcon from '@mui/icons-material/Link'; // Import LinkIcon
 import * as MuiIcons from '@mui/icons-material'; // Importar todos os ícones para uso dinâmico
 import AddModuleModal from './AddModuleModal';
 import apiClient from '../services/apiClient'; // Criaremos este
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate, Link as RouterLink } from 'react-router-dom'; // Import useNavigate and RouterLink
 
 const DynamicIcon = ({ name }) => {
   const IconComponent = MuiIcons[name];
@@ -87,6 +88,34 @@ function Dashboard() {
         Painel de Funções
       </Typography>
       <Grid container spacing={3}>
+        {/* Static Card for Links de Acesso */}
+        <Grid item xs={12} sm={6} md={4} lg={3}>
+          <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
+            <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
+              <LinkIcon sx={{ fontSize: 40, mb: 1 }} color="primary" />
+              <Typography gutterBottom variant="h6" component="div">
+                Links de Acesso
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Gerenciar links para sistemas externos e credenciais.
+              </Typography>
+            </CardContent>
+            <CardActions sx={{ justifyContent: 'center', p: 2 }}>
+              <Button
+                size="small"
+                variant="contained"
+                color="primary"
+                startIcon={<LaunchIcon />}
+                component={RouterLink}
+                to="/dashboard/links-acesso"
+              >
+                Abrir
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        {/* Dynamic Modules */}
         {activeModules.map((module) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={module.module_key}>
             <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>

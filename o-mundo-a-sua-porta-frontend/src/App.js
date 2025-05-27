@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme, CssBaseline, AppBar, Toolbar, Typography, C
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import BudgetPage from './components/modules/02_budgetModule/BudgetPage';
+import LinksAcessoPage from './components/LinksAcessoPage'; // Import LinksAcessoPage
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 
 // Tema básico do Material-UI
@@ -54,6 +55,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/budgets" element={<BudgetPage />} />
+            <Route path="/dashboard/links-acesso" element={<LinksAcessoPage />} /> {/* Added route for LinksAcessoPage */}
             {/* Other module routes could be added here or dynamically */}
           </Routes>
         </Container>

@@ -24,6 +24,10 @@ app.get('/api/health', async (req, res) => {
 // Mount budget routes under /api/budgets
 app.use('/api/budgets', budgetRoutes);
 
+// Mount Links de Acesso routes
+const linksAcessoRoutes = require('./routes/linksAcessoRoutes');
+app.use('/api/links-acesso', linksAcessoRoutes);
+
 const modulesDir = path.join(__dirname, 'modules', 'addons');
 
 // Function to load and register routes from active modules
