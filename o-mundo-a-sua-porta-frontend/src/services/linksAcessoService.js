@@ -1,4 +1,4 @@
-import apiClient from '../apiClient'; // Assuming apiClient is in the parent directory
+import apiClient from './apiClient'; // Corrected path
 
 const API_ENDPOINT = '/api/links-acesso';
 
